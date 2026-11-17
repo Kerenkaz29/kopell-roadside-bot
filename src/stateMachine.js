@@ -2,6 +2,7 @@ const Conversation = require('./models/Conversation');
 const ServiceRequest = require('./models/ServiceRequest');
 const { assignTechnician } = require('./dispatch');
 const { requestLocation } = require('./whatsapp/client');
+const { startSimulation } = require('./statusSimulator');
 
 const ISSUE_PROMPT = 'קיבלנו את הפנייה שלך! מה קרה לרכב? (תקר / תאונה / נעילה / תקלה)';
 const VEHICLE_PROMPT = 'תודה. שלחי בבקשה מספר רכב ומספר פוליסה (בהודעה אחת, למשל: "12-345-67 / פוליסה 9988")';
@@ -59,6 +60,7 @@ async function handleMessage(message) {
       request.technicianId = assignment.technician._id;
       request.etaMinutes = assignment.etaMinutes;
       await request.save();
+      startSimulation(request._id);
 
       return [
         `טכנאי בדרך אליך - ${assignment.technician.name}. זמן הגעה משוער: כ-${assignment.etaMinutes} דקות.`,
