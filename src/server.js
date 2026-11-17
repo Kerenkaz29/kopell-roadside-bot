@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const config = require('./config');
 const parseIncoming = require('./whatsapp/parseIncoming');
+const whatsapp = require('./whatsapp/client');
+const { handleMessage } = require('./stateMachine');
 
 const app = express();
 app.use(express.json());
@@ -17,10 +19,21 @@ app.get('/webhook', (req, res) => {
   return res.sendStatus(403);
 });
 
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
   const message = parseIncoming(req.body);
   if (message) {
     console.log('Incoming message:', message);
+    res.sendStatus(200);
+    try {
+      const replies = await handleMessage(message);
+      for (const reply of replies) {
+        await whatsapp.sendText(message.from, reply);
+      }
+      console.log('Replies sent to', message.from, replies);
+    } catch (err) {
+      console.error('Failed to handle message:', err.response?.data || err.message);
+    }
+    return;
   }
   res.sendStatus(200);
 });

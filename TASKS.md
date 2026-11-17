@@ -8,8 +8,8 @@
 - [x] 6. Express server skeleton + webhook verification endpoint (GET, hub.verify_token)
 - [x] 7. Webhook POST handler: receive + parse incoming WhatsApp messages
 - [ ] 8. WhatsApp client wrapper: send text message, send location request (Graph API)
-- [ ] 9. Conversation state machine: issue type -> location -> vehicle/policy -> confirm
-- [ ] 10. Dispatch service: find nearest available technician ($near), assign, compute ETA
+- [x] 9. Conversation state machine: issue type -> location -> vehicle/policy -> confirm
+- [x] 10. Dispatch service: find nearest available technician ($near), assign, compute ETA
 - [ ] 11. Status simulator: auto-progress ASSIGNED -> ON_THE_WAY -> ARRIVED -> COMPLETED, push WhatsApp updates
 - [ ] 12. Local run + ngrok tunnel + configure webhook URL in Meta dashboard
 - [ ] 13. End-to-end test: real WhatsApp message through full flow
