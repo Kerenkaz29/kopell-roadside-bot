@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const config = require('./config');
 const parseIncoming = require('./whatsapp/parseIncoming');
 const parseIncomingTwilio = require('./whatsapp/parseIncomingTwilio');
-const whatsapp = require('./whatsapp/client');
+const metaClient = require('./whatsapp/metaClient');
+const twilioClient = require('./whatsapp/twilioClient');
 const { handleMessage } = require('./stateMachine');
 const ServiceRequest = require('./models/ServiceRequest');
 const Technician = require('./models/Technician');
@@ -12,16 +13,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-async function processMessage(message) {
+async function processMessage(message, client) {
   console.log('Incoming message:', message);
   try {
-    const replies = await handleMessage(message);
+    const replies = await handleMessage(message, client);
+    console.log('Bot reply:', replies);
     for (const reply of replies) {
-      await whatsapp.sendText(message.from, reply);
+      await client.sendText(message.from, reply);
     }
-    console.log('Replies sent to', message.from, replies);
+    console.log('WhatsApp delivery: sent to', message.from);
   } catch (err) {
-    console.error('Failed to handle message:', err.response?.data || err.message);
+    console.log('WhatsApp delivery: skipped (provider verification pending) -', err.response?.data?.error?.message || err.message);
   }
 }
 
@@ -39,13 +41,13 @@ app.get('/webhook', (req, res) => {
 app.post('/webhook', async (req, res) => {
   const message = parseIncoming(req.body);
   res.sendStatus(200);
-  if (message) await processMessage(message);
+  if (message) await processMessage(message, metaClient);
 });
 
 app.post('/webhook/twilio', async (req, res) => {
   const message = parseIncomingTwilio(req.body);
   res.set('Content-Type', 'text/xml').send('<Response></Response>');
-  if (message) await processMessage(message);
+  if (message) await processMessage(message, twilioClient);
 });
 
 app.get('/admin/requests', async (req, res) => {

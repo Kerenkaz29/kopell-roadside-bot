@@ -1,5 +1,4 @@
 const ServiceRequest = require('./models/ServiceRequest');
-const { sendText } = require('./whatsapp/client');
 
 const STEPS = [
   { status: 'ON_THE_WAY', delayMs: 15000, message: (r) => `עדכון: הטכנאי יצא לדרך אליך, ETA כ-${r.etaMinutes} דקות.` },
@@ -9,7 +8,7 @@ const STEPS = [
 
 // Walks a freshly-dispatched request through its lifecycle on a timer, pushing a
 // WhatsApp update at each step. Demo-only stand-in for a real technician's app.
-function startSimulation(requestId) {
+function startSimulation(requestId, client) {
   let delay = 0;
   for (const step of STEPS) {
     delay += step.delayMs;
@@ -21,7 +20,7 @@ function startSimulation(requestId) {
       await request.save();
 
       try {
-        await sendText(request.phone, step.message(request));
+        await client.sendText(request.phone, step.message(request));
         console.log(`Request ${requestId} -> ${step.status}, update sent`);
       } catch (err) {
         console.error(`Request ${requestId} -> ${step.status}, update failed:`, err.message);

@@ -1,7 +1,6 @@
 const Conversation = require('./models/Conversation');
 const ServiceRequest = require('./models/ServiceRequest');
 const { assignTechnician } = require('./dispatch');
-const { requestLocation } = require('./whatsapp/client');
 const { startSimulation } = require('./statusSimulator');
 
 const ISSUE_PROMPT = 'קיבלנו את הפנייה שלך! מה קרה לרכב? (תקר / תאונה / נעילה / תקלה)';
@@ -10,7 +9,7 @@ const VEHICLE_PROMPT = 'תודה. שלחי בבקשה מספר רכב ומספר
 // Drives one turn of the conversation and returns the reply text(s) to send back.
 // Side effects (sending the location-request interactive message) happen here too,
 // since that message type isn't plain text.
-async function handleMessage(message) {
+async function handleMessage(message, client) {
   let convo = await Conversation.findOne({ phone: message.from });
 
   if (!convo) {
@@ -23,7 +22,7 @@ async function handleMessage(message) {
       convo.data.issueType = message.text || 'לא צוין';
       convo.state = 'AWAITING_LOCATION';
       await convo.save();
-      await requestLocation(message.from, 'תודה. שתפי בבקשה את המיקום שלך כדי שנשלח טכנאי');
+      await client.requestLocation(message.from, 'תודה. שתפי בבקשה את המיקום שלך כדי שנשלח טכנאי');
       return [];
     }
 
@@ -60,7 +59,7 @@ async function handleMessage(message) {
       request.technicianId = assignment.technician._id;
       request.etaMinutes = assignment.etaMinutes;
       await request.save();
-      startSimulation(request._id);
+      startSimulation(request._id, client);
 
       return [
         `טכנאי בדרך אליך - ${assignment.technician.name}. זמן הגעה משוער: כ-${assignment.etaMinutes} דקות.`,

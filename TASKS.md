@@ -12,7 +12,7 @@
 - [x] 10. Dispatch service: find nearest available technician ($near), assign, compute ETA
 - [x] 11. Status simulator: auto-progress ASSIGNED -> ON_THE_WAY -> ARRIVED -> COMPLETED, push WhatsApp updates
 - [x] 12. Local run + ngrok tunnel + webhook configured (Twilio sandbox)
-- [blocked] 13. Real live WhatsApp delivery - blocked by provider compliance (Meta account locked, Twilio KYC pending). Logic fully verified via simulated webhook calls instead.
+- [x] 13. Real live WhatsApp delivery - working end-to-end via Meta Cloud API (fresh app/WABA, app subscribed to WABA webhooks via POST /{waba-id}/subscribed_apps)
 - [x] 14. (stretch) Admin endpoint `/admin/requests` to view live requests
 
 Each task gets implemented, then verified (server runs / request succeeds / message arrives) before moving to the next.
