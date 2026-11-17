@@ -1,8 +1,8 @@
 # Build Tasks - Kopell Roadside Bot
 
 - [x] 1. Project scaffold (package.json, .gitignore, README, git init, GitHub remote)
-- [ ] 2. Install dependencies (`npm install`)
-- [ ] 3. Env config (`.env.example`, dotenv loading, config module)
+- [x] 2. Install dependencies (`npm install`)
+- [x] 3. Env config (`.env.example`, dotenv loading, config module)
 - [ ] 4. MongoDB connection (Atlas) + Mongoose models: Conversation, Request, Technician
 - [ ] 5. Seed script: mock technicians with geo locations
 - [ ] 6. Express server skeleton + webhook verification endpoint (GET, hub.verify_token)
