@@ -21,4 +21,5 @@ module.exports = {
     authToken: required('TWILIO_AUTH_TOKEN'),
     fromNumber: required('TWILIO_WHATSAPP_FROM'),
   },
+  geminiApiKey: required('GEMINI_API_KEY'),
 };

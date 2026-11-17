@@ -10,6 +10,7 @@ const conversationSchema = new mongoose.Schema(
     },
     data: {
       issueType: String,
+      issueSummary: String,
       location: {
         lat: Number,
         lng: Number,

@@ -2,9 +2,11 @@ const Conversation = require('./models/Conversation');
 const ServiceRequest = require('./models/ServiceRequest');
 const { assignTechnician } = require('./dispatch');
 const { startSimulation } = require('./statusSimulator');
+const { classifyIssue } = require('./ai/classifyIssue');
+const { extractVehicleInfo } = require('./ai/extractVehicleInfo');
 
-const ISSUE_PROMPT = 'קיבלנו את הפנייה שלך! מה קרה לרכב? (תקר / תאונה / נעילה / תקלה)';
-const VEHICLE_PROMPT = 'תודה. שלחי בבקשה מספר רכב ומספר פוליסה (בהודעה אחת, למשל: "12-345-67 / פוליסה 9988")';
+const ISSUE_PROMPT = 'קיבלנו את הפנייה שלך! מה קרה לרכב?';
+const VEHICLE_PROMPT = 'תודה. שלחי בבקשה מספר רכב ומספר פוליסה (בהודעה אחת, בכל ניסוח שנוח לך)';
 
 // Drives one turn of the conversation and returns the reply text(s) to send back.
 // Side effects (sending the location-request interactive message) happen here too,
@@ -19,10 +21,12 @@ async function handleMessage(message, client) {
 
   switch (convo.state) {
     case 'START': {
-      convo.data.issueType = message.text || 'לא צוין';
+      const { category, summary } = await classifyIssue(message.text || '');
+      convo.data.issueType = category;
+      convo.data.issueSummary = summary;
       convo.state = 'AWAITING_LOCATION';
       await convo.save();
-      await client.requestLocation(message.from, 'תודה. שתפי בבקשה את המיקום שלך כדי שנשלח טכנאי');
+      await client.requestLocation(message.from, `הבנתי - ${summary}. שתפי בבקשה את המיקום שלך כדי שנשלח טכנאי`);
       return [];
     }
 
@@ -37,15 +41,18 @@ async function handleMessage(message, client) {
     }
 
     case 'AWAITING_VEHICLE': {
-      convo.data.vehicleNumber = message.text || 'לא צוין';
+      const { vehicleNumber, policyNumber } = await extractVehicleInfo(message.text || '');
+      convo.data.vehicleNumber = vehicleNumber || 'לא צוין';
+      convo.data.policyNumber = policyNumber || 'לא צוין';
       convo.state = 'DISPATCHED';
       await convo.save();
 
       const request = await ServiceRequest.create({
         phone: convo.phone,
-        issueType: convo.data.issueType,
+        issueType: convo.data.issueSummary || convo.data.issueType,
         location: { type: 'Point', coordinates: [convo.data.location.lng, convo.data.location.lat] },
         vehicleNumber: convo.data.vehicleNumber,
+        policyNumber: convo.data.policyNumber,
       });
 
       const assignment = await assignTechnician(request.location);
