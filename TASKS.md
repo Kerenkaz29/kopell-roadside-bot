@@ -3,10 +3,10 @@
 - [x] 1. Project scaffold (package.json, .gitignore, README, git init, GitHub remote)
 - [x] 2. Install dependencies (`npm install`)
 - [x] 3. Env config (`.env.example`, dotenv loading, config module)
-- [ ] 4. MongoDB connection (Atlas) + Mongoose models: Conversation, Request, Technician
-- [ ] 5. Seed script: mock technicians with geo locations
-- [ ] 6. Express server skeleton + webhook verification endpoint (GET, hub.verify_token)
-- [ ] 7. Webhook POST handler: receive + parse incoming WhatsApp messages
+- [x] 4. MongoDB connection (local) + Mongoose models: Conversation, Request, Technician
+- [x] 5. Seed script: mock technicians with geo locations
+- [x] 6. Express server skeleton + webhook verification endpoint (GET, hub.verify_token)
+- [x] 7. Webhook POST handler: receive + parse incoming WhatsApp messages
 - [ ] 8. WhatsApp client wrapper: send text message, send location request (Graph API)
 - [ ] 9. Conversation state machine: issue type -> location -> vehicle/policy -> confirm
 - [ ] 10. Dispatch service: find nearest available technician ($near), assign, compute ETA
