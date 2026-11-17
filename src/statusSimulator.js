@@ -1,14 +1,26 @@
 const ServiceRequest = require('./models/ServiceRequest');
 const Technician = require('./models/Technician');
 const Conversation = require('./models/Conversation');
+const { generateReply } = require('./ai/generateReply');
 
 const STEPS = [
-  { status: 'ON_THE_WAY', delayMs: 15000, message: (r) => `עדכון: הטכנאי יצא לדרך אליך, ETA כ-${r.etaMinutes} דקות.` },
-  { status: 'ARRIVED', delayMs: 15000, message: () => 'הטכנאי הגיע למיקום שלך.' },
+  {
+    status: 'ON_THE_WAY',
+    delayMs: 15000,
+    instruction: 'עדכני את הלקוח שהטכנאי יצא לדרך אליה, כולל זמן ההגעה המשוער',
+    facts: (r) => ({ זמן_הגעה_בדקות: r.etaMinutes }),
+  },
+  {
+    status: 'ARRIVED',
+    delayMs: 15000,
+    instruction: 'עדכני את הלקוח שהטכנאי הגיע למיקום שלה',
+    facts: () => ({}),
+  },
   {
     status: 'COMPLETED',
     delayMs: 10000,
-    message: () => 'הטיפול הושלם. תודה שבחרת בשירותי החילוץ שלנו! אם תזדקקי לעזרה נוספת, פשוט שלחי הודעה חדשה.',
+    instruction: 'הודיעי ללקוח שהטיפול הושלם, תודי לה שבחרה בשירותי החילוץ, ושתוכל לפנות שוב בכל עת',
+    facts: () => ({}),
   },
 ];
 
@@ -33,7 +45,8 @@ function startSimulation(requestId, client) {
       }
 
       try {
-        await client.sendText(request.phone, step.message(request));
+        const message = await generateReply(step.instruction, step.facts(request));
+        await client.sendText(request.phone, message);
         console.log(`Request ${requestId} -> ${step.status}, update sent`);
       } catch (err) {
         console.error(`Request ${requestId} -> ${step.status}, update failed:`, err.message);
