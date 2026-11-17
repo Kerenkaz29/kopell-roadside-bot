@@ -1,9 +1,15 @@
 const ServiceRequest = require('./models/ServiceRequest');
+const Technician = require('./models/Technician');
+const Conversation = require('./models/Conversation');
 
 const STEPS = [
   { status: 'ON_THE_WAY', delayMs: 15000, message: (r) => `עדכון: הטכנאי יצא לדרך אליך, ETA כ-${r.etaMinutes} דקות.` },
   { status: 'ARRIVED', delayMs: 15000, message: () => 'הטכנאי הגיע למיקום שלך.' },
-  { status: 'COMPLETED', delayMs: 10000, message: () => 'הטיפול הושלם. תודה שבחרת בשירותי החילוץ שלנו!' },
+  {
+    status: 'COMPLETED',
+    delayMs: 10000,
+    message: () => 'הטיפול הושלם. תודה שבחרת בשירותי החילוץ שלנו! אם תזדקקי לעזרה נוספת, פשוט שלחי הודעה חדשה.',
+  },
 ];
 
 // Walks a freshly-dispatched request through its lifecycle on a timer, pushing a
@@ -18,6 +24,13 @@ function startSimulation(requestId, client) {
 
       request.status = step.status;
       await request.save();
+
+      if (step.status === 'COMPLETED') {
+        if (request.technicianId) {
+          await Technician.findByIdAndUpdate(request.technicianId, { status: 'AVAILABLE' });
+        }
+        await Conversation.updateOne({ phone: request.phone }, { state: 'START', data: {} });
+      }
 
       try {
         await client.sendText(request.phone, step.message(request));
