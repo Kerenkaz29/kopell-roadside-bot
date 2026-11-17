@@ -1,0 +1,22 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file: .env
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/kopell_roadside
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo_data:

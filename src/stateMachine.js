@@ -1,5 +1,6 @@
 const Conversation = require('./models/Conversation');
 const ServiceRequest = require('./models/ServiceRequest');
+const Technician = require('./models/Technician');
 const { assignTechnician } = require('./dispatch');
 const { startSimulation } = require('./statusSimulator');
 const { classifyIssue } = require('./ai/classifyIssue');
@@ -7,6 +8,11 @@ const { extractVehicleInfo } = require('./ai/extractVehicleInfo');
 
 const ISSUE_PROMPT = 'קיבלנו את הפנייה שלך! מה קרה לרכב?';
 const VEHICLE_PROMPT = 'תודה. שלחי בבקשה מספר רכב ומספר פוליסה (בהודעה אחת, בכל ניסוח שנוח לך)';
+const CANCEL_WORDS = ['בטל', 'ביטול', 'לסגור', 'סגור', 'לבטל', 'cancel'];
+
+function isCancelRequest(text) {
+  return CANCEL_WORDS.some((word) => (text || '').includes(word));
+}
 
 // Drives one turn of the conversation and returns the reply text(s) to send back.
 // Side effects (sending the location-request interactive message) happen here too,
@@ -16,11 +22,16 @@ async function handleMessage(message, client) {
 
   if (!convo) {
     convo = await Conversation.create({ phone: message.from, state: 'START' });
-    return [ISSUE_PROMPT];
   }
 
   switch (convo.state) {
     case 'START': {
+      convo.state = 'AWAITING_ISSUE';
+      await convo.save();
+      return [ISSUE_PROMPT];
+    }
+
+    case 'AWAITING_ISSUE': {
       const { category, summary } = await classifyIssue(message.text || '');
       convo.data.issueType = category;
       convo.data.issueSummary = summary;
@@ -76,6 +87,19 @@ async function handleMessage(message, client) {
     case 'DISPATCHED': {
       const request = await ServiceRequest.findOne({ phone: convo.phone }).sort({ createdAt: -1 });
       if (!request) return ['לא נמצאה קריאה פעילה. שלחי הודעה חדשה כדי לפתוח קריאה.'];
+
+      if (isCancelRequest(message.text)) {
+        request.status = 'CANCELLED';
+        await request.save();
+        if (request.technicianId) {
+          await Technician.findByIdAndUpdate(request.technicianId, { status: 'AVAILABLE' });
+        }
+        convo.state = 'START';
+        convo.data = {};
+        await convo.save();
+        return ['הפנייה בוטלה. אם תזדקקי לעזרה בעתיד, פשוט שלחי הודעה חדשה.'];
+      }
+
       return [`הטכנאי ${request.status === 'ASSIGNED' ? 'בדרך' : 'מטפל בקריאה'}, ETA כ-${request.etaMinutes} דקות.`];
     }
 
