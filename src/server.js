@@ -8,13 +8,31 @@ const twilioClient = require('./whatsapp/twilioClient');
 const { handleMessage } = require('./stateMachine');
 const ServiceRequest = require('./models/ServiceRequest');
 const Technician = require('./models/Technician');
+const ProcessedMessage = require('./models/ProcessedMessage');
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.get('/health', (req, res) => res.sendStatus(200));
+
+async function alreadyProcessed(messageId) {
+  if (!messageId) return false;
+  try {
+    await ProcessedMessage.create({ messageId });
+    return false;
+  } catch (err) {
+    if (err.code === 11000) return true; // duplicate key - we've seen this message before
+    throw err;
+  }
+}
+
 async function processMessage(message, client) {
   console.log('Incoming message:', message);
+  if (await alreadyProcessed(message.messageId)) {
+    console.log('Duplicate webhook delivery, skipping:', message.messageId);
+    return;
+  }
   try {
     const replies = await handleMessage(message, client);
     console.log('Bot reply:', replies);
