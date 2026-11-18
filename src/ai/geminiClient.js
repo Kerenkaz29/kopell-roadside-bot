@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('../config');
 
-const MODEL = 'gemini-2.5-flash-lite';
+const MODEL = 'gemini-3.5-flash-lite';
 
 // Calls Gemini with a JSON-only response and returns the parsed object.
 async function generateJSON(systemPrompt, userText) {
