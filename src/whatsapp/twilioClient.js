@@ -1,10 +1,14 @@
 const twilio = require('twilio');
 const config = require('../config');
 
-const client = twilio(config.twilio.accountSid, config.twilio.authToken);
+let client;
+function getClient() {
+  if (!client) client = twilio(config.twilio.accountSid, config.twilio.authToken);
+  return client;
+}
 
 async function sendText(to, body) {
-  await client.messages.create({
+  await getClient().messages.create({
     from: config.twilio.fromNumber,
     to: `whatsapp:+${to}`,
     body,
