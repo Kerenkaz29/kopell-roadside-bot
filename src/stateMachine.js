@@ -27,7 +27,14 @@ async function handleMessage(message, client) {
     }
 
     case 'AWAITING_ISSUE': {
-      const { category, summary } = await classifyIssue(message.text || '');
+      const result = await classifyIssue(message.text || '');
+      if (!result.understood) {
+        const reply = await generateReply(
+          'לא הבנת מה קרה לרכב מההודעה האחרונה של הלקוח. בקשי ממנה בנימוס לתאר שוב, בכמה מילים, מה קרה לרכב'
+        );
+        return [reply];
+      }
+      const { category, summary } = result;
       convo.data.issueType = category;
       convo.data.issueSummary = summary;
       convo.state = 'AWAITING_LOCATION';
@@ -56,7 +63,7 @@ async function handleMessage(message, client) {
       const { vehicleNumber, policyNumber } = await extractVehicleInfo(message.text || '');
       if (!vehicleNumber && !policyNumber) {
         const reply = await generateReply(
-          'לא הצלחת לזהות מספר רכב או מספר פוליסה בהודעה הקודמת של הלקוח. בקשי ממנה שוב לשלוח את שני הפרטים, בנימוס'
+          'לא הבנת את ההודעה הקודמת של הלקוח - לא הצלחת לזהות בה מספר רכב או מספר פוליסה. אמרי לה בנימוס שלא הבנת, ובקשי שתכתוב את מספר הרכב ומספר הפוליסה בצורה ברורה'
         );
         return [reply];
       }

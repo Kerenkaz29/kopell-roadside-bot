@@ -2,9 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const config = require('./config');
 const parseIncoming = require('./whatsapp/parseIncoming');
-const parseIncomingTwilio = require('./whatsapp/parseIncomingTwilio');
 const metaClient = require('./whatsapp/metaClient');
-const twilioClient = require('./whatsapp/twilioClient');
 const { handleMessage } = require('./stateMachine');
 const ServiceRequest = require('./models/ServiceRequest');
 const Technician = require('./models/Technician');
@@ -12,7 +10,6 @@ const ProcessedMessage = require('./models/ProcessedMessage');
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
 app.get('/health', (req, res) => res.sendStatus(200));
 
@@ -60,12 +57,6 @@ app.post('/webhook', async (req, res) => {
   const message = parseIncoming(req.body);
   res.sendStatus(200);
   if (message) await processMessage(message, metaClient);
-});
-
-app.post('/webhook/twilio', async (req, res) => {
-  const message = parseIncomingTwilio(req.body);
-  res.set('Content-Type', 'text/xml').send('<Response></Response>');
-  if (message) await processMessage(message, twilioClient);
 });
 
 app.get('/admin/requests', async (req, res) => {
