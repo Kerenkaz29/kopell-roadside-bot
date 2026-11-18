@@ -54,6 +54,13 @@ async function handleMessage(message, client) {
 
     case 'AWAITING_VEHICLE': {
       const { vehicleNumber, policyNumber } = await extractVehicleInfo(message.text || '');
+      if (!vehicleNumber && !policyNumber) {
+        const reply = await generateReply(
+          'לא הצלחת לזהות מספר רכב או מספר פוליסה בהודעה הקודמת של הלקוח. בקשי ממנה שוב לשלוח את שני הפרטים, בנימוס'
+        );
+        return [reply];
+      }
+
       convo.data.vehicleNumber = vehicleNumber || 'לא צוין';
       convo.data.policyNumber = policyNumber || 'לא צוין';
       convo.state = 'DISPATCHED';
